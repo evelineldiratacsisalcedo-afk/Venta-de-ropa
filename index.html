@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema Simplificado de Ventas e Inventario - Ropa de Mujer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-50 font-sans text-gray-800">
+
+    <nav class="bg-indigo-600 text-white shadow-lg sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <i class="fa-solid fa-store text-2xl"></i>
+                <span class="text-xl font-bold tracking-wider">ModaGestión</span>
+            </div>
+            <div class="flex space-x-2">
+                <button onclick="cambiarSeccion('inventario')" class="px-4 py-2 rounded-md bg-indigo-700 hover:bg-indigo-800 transition"><i class="fa-solid fa-boxes-stacked mr-2"></i>Inventario</button>
+                <button onclick="cambiarSeccion('ventas')" class="px-4 py-2 rounded-md bg-indigo-700 hover:bg-indigo-800 transition"><i class="fa-solid fa-cart-shopping mr-2"></i>Módulo Ventas</button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-4 py-6">
+        
+        <section id="sec-inventario" class="block space-y-6">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-4 rounded-xl shadow-sm">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900">Control de Inventario</h1>
+                    <p class="text-sm text-gray-500">Administra tus prendas, niveles de stock y copias de seguridad.</p>
+                </div>
+                <div class="flex flex-wrap gap-2 w-full md:w-auto">
+                    <button onclick="abrirModalProducto()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg shadow transition flex-1 md:flex-none"><i class="fa-solid fa-plus mr-2"></i>Nueva Prenda</button>
+                    <button onclick="exportarJSON()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow transition flex-1 md:flex-none"><i class="fa-solid fa-download mr-2"></i>Exportar JSON</button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-white p-4 rounded-xl shadow-sm">
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"><i class="fa-solid fa-magnifying-glass"></i></span>
+                    <input type="text" id="buscar-nombre" oninput="filtrarProductos()" placeholder="Buscar por código o nombre de prenda..." class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+                <div>
+                    <select id="buscar-categoria" onchange="filtrarProductos()" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white">
+                        <option value="">Todas las Categorías</option>
+                        <option value="Blusas">Blusas</option>
+                        <option value="Vestidos">Vestidos</option>
+                        <option value="Pantalones">Pantalones</option>
+                        <option value="Casacas">Casacas</option>
+                        <option value="Polos">Polos</option>
+                        <option value="Chompas">Chompas</option>
+                        <option value="Faldas">Faldas</option>
+                        <option value="Shorts">Shorts</option>
+                        <option value="Blazers">Blazers</option>
+                        <option value="Enterizos">Enterizos</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-gray-100 text-gray-700 text-sm uppercase tracking-wider border-b">
+                                <th class="px-6 py-3">Código</th>
+                                <th class="px-6 py-3">Prenda</th>
+                                <th class="px-6 py-3">Categoría</th>
+                                <th class="px-6 py-3 text-right">Precio</th>
+                                <th class="px-6 py-3 text-center">Stock</th>
+                                <th class="px-6 py-3">Proveedor</th>
+                                <th class="px-6 py-3 text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-productos" class="divide-y divide-gray-200 text-sm">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <section id="sec-ventas" class="hidden grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-2 space-y-6">
+                <div class="bg-white p-6 rounded-xl shadow-sm space-y-4">
+                    <h2 class="text-xl font-bold text-gray-900"><i class="fa-solid fa-cash-register text-indigo-600 mr-2"></i>Registrar Venta</h2>
+                    <hr>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                        <div class="md:col-span-2">
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">Seleccionar Prenda</label>
+                            <select id="venta-producto-select" class="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white">
+                                </select>
+                        </div>
+                        <div>
+                            <button onclick="agregarAlCarrito()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-lg shadow transition font-medium"><i class="fa-solid fa-plus mr-1"></i> Añadir</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                    <div class="p-4 bg-gray-50 border-b flex justify-between items-center">
+                        <span class="font-bold text-gray-700">Artículos en la Venta Actual</span>
+                        <i class="fa-solid fa-basket-shopping text-gray-400"></i>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-gray-100 text-gray-600 text-xs uppercase border-b">
+                                    <th class="px-4 py-2">Prenda</th>
+                                    <th class="px-4 py-2 text-right">Precio</th>
+                                    <th class="px-4 py-2 text-center" style="width: 100px;">Cant.</th>
+                                    <th class="px-4 py-2 text-right">Subtotal</th>
+                                    <th class="px-4 py-2 text-center">Quitar</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-carrito" class="divide-y divide-gray-200 text-sm">
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-sm h-fit space-y-6 border border-gray-100">
+                <h3 class="text-lg font-bold text-gray-900 flex items-center justify-between">
+                    <span>Resumen de Cobro</span>
+                    <i class="fa-solid fa-receipt text-gray-400"></i>
+                </h3>
+                <hr>
+                <div class="space-y-3 text-sm">
+                    <div class="flex justify-between text-gray-600">
+                        <span>Subtotal:</span>
+                        <span id="resumen-subtotal">S/. 0.00</span>
+                    </div>
+                    <div class="flex justify-between text-gray-600">
+                        <span>IGV (18%):</span>
+                        <span id="resumen-igv">S/. 0.00</span>
+                    </div>
+                    <div class="flex justify-between text-gray-600">
+                        <span>Descuento Manual (S/.):</span>
+                        <input type="number" id="venta-descuento" value="0" min="0" oninput="calcularTotalesVenta()" class="w-20 text-right border rounded px-1.5 py-0.5 focus:ring-1 focus:ring-indigo-500">
+                    </div>
+                    <hr>
+                    <div class="flex justify-between text-xl font-black text-gray-900 bg-indigo-50 p-3 rounded-lg">
+                        <span>TOTAL:</span>
+                        <span id="resumen-total" class="text-indigo-600">S/. 0.00</span>
+                    </div>
+                </div>
+
+                <button onclick="procesarVenta()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-bold shadow-md transition tracking-wide uppercase text-sm"><i class="fa-solid fa-circle-check mr-2"></i>Emitir Comprobante</button>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        // --- 1. BASE DE DATOS INICIAL (50 PRODUCTOS DE ROPA DE MUJER) ---
+        const listaInicialProductos = [
+            { codigo: "RE-001", nombre: "Blusa de Gasa Casual", categoria: "Blusas", precio: 45.00, stock: 25, proveedor: "Textil San Jacinto" },
+            { codigo: "RE-002", nombre: "Vestido de Noche Elegante", categoria: "Vestidos", precio: 120.00, stock: 12, proveedor: "Confecciones Lima" },
+            { codigo: "RE-003", nombre: "Jean Skinny High Waste", categoria: "Pantalones", precio: 89.90, stock: 40, proveedor: "Moda & Estilo Peruano" },
+            { codigo: "RE-004", nombre: "Casaca de Jean Oversize", categoria: "Casacas", precio: 110.00, stock: 15, proveedor: "Gamarra Import S.A.C." },
+            { codigo: "RE-005", nombre: "Polo Oversize Algodón", categoria: "Polos", precio: 35.00, stock: 50, proveedor: "Textil San Jacinto" },
+            { codigo: "RE-006", font: "", nombre: "Falta Plisada Midi", categoria: "Faldas", precio: 65.00, stock: 5, proveedor: "Confecciones Lima" }, // Stock bajo inicial de prueba
+            { codigo: "RE-007", nombre: "Chompa de Hilo Tejida", categoria: "Chompas", precio: 75.00, stock: 18, proveedor: "Alpacas y Algodón" },
+            { codigo: "RE-008", nombre: "Short Denim Clásico", categoria: "Shorts", precio: 55.00, stock: 35, proveedor: "Moda & Estilo Peruano" },
+            { codigo: "RE-009", nombre: "Blazer Sastrero Ejecutivo", categoria: "Blazers", precio: 140.00, stock: 10, proveedor: "Gamarra Import S.A.C." },
+            { codigo: "RE-010", nombre: "Enterizo Floral de Verano", categoria: "Enterizos", precio: 95.00, stock: 14, proveedor: "Confecciones Lima" },
+            { codigo: "RE-011", nombre: "Top Crop Rib", categoria: "Polos", precio: 25.00, stock: 60, proveedor: "Textil San Jacinto" },
+            { codigo: "RE-012", nombre: "Pantalón Palazzo de Lino", categoria: "Pantalones", precio: 85.00, stock: 22, proveedor: "Moda & Estilo Peruano" },
+            { codigo: "RE-013", nombre: "Polera con Capucha (Hoodie)", categoria: "Poleras", precio: 70.00, stock: 30, proveedor: "Gamarra Import S.A.C." },
+            { codigo: "RE-014", nombre: "Vestido Midi Casual", categoria: "Vestidos", precio: 79.90, stock: 17, proveedor: "Confecciones Lima" },
+            { codigo: "RE-015", nombre: "Cardigan Largo Calado", categoria: "Chompas", precio: 68.00, stock: 25, proveedor: "Alpacas y Algodón" },
+            { codigo: "RE-016", nombre: "Biker Short Deportivo", categoria: "Shorts", precio: 30.00, stock: 45, proveedor: "Textil San Jacinto" },
+            { codigo: "RE-017", nombre: "Camisa de Lino Manga Larga", categoria: "Camisas", precio: 75.00, stock: 20, proveedor: "Moda & Estilo Peruano" },
+            { codigo: "RE-018", nombre: "Casaca Impermeable", categoria: "Casacas", precio: 125.00, stock: 12, proveedor: "Gamarra Import S.A.C." },
+            { codigo: "RE-019", nombre: "Falda Sastrero Corta", categoria: "Faldas", precio: 50.00, stock: 28, proveedor: "Confecciones Lima" },
+            { codigo: "RE-020", nombre: "Kimono Estampado", categoria: "Ropa de Playa", precio: 55.00, stock: 15, proveedor: "Textil San Jacinto" },
+            { codigo: "RE-021", nombre: "Leggings Tiro Alto Premium", categoria: "Pantalones", precio: 49.90, stock: 55, proveedor: "Moda & Estilo Peruano" },
+            { codigo: "RE-022", nombre: "Ropa de Baño Enteriza", categoria: "Ropa de Playa", precio: 89.00, stock: 20, proveedor: "Gamarra Import S.A.C." },
+            { codigo: "RE-023", nombre: "Pijama Satín (2 piezas)", categoria: "Pijamas", precio: 95.00, stock: 16, proveedor: "Confecciones Lima" },
+            { codigo: "RE-024", nombre: "Chaleco de Lana Trenzado", categoria: "Chompas", precio: 60.00, stock: 22, proveedor: "Alpacas y Algodón" },
+            { codigo: "RE-025", nombre: "Body de Encaje Negro", categoria: "Blusas", precio: 45.00, stock: 30, proveedor: "Textil San Jacinto" },
+            { codigo: "RE-026", nombre: "Saco de Paño Largo", categoria: "Casacas", precio: 199.00, stock: 8, proveedor: "Moda & Estilo Peruano" },
+            { codigo: "RE-027", nombre: "Jean Mom Fit Denim", categoria: "Pantalones", precio: 95.00, stock: 33, proveedor: "Gamarra Import S.A.C." },
+            { codigo: "RE-028", nombre: "Blusa Cuello V Encaje", categoria: "Blusas", precio: 48.00, stock: 26, proveedor: "Confecciones Lima" },
+            { codigo: "RE-029", nombre: "Falda Denim con Botones", categoria: "Faldas", precio: 59.90, stock: 19, proveedor: "Moda & Estilo Peruano" },
+            { codigo: "RE-030", nombre: "Vestido de Algodón Básico", categoria: "Vestidos", precio: 49.00, stock: 42, proveedor: "Textil San Jacinto" },
+            { codigo: "RE-031", nombre: "Polera Crop Terciopelo", categoria: "Poleras", precio: 65.00, stock: 20, proveedor: "Gamarra Import S.A.C." },
+            { codigo: "RE-032", nombre: "Short de Vestir con Cinturón", categoria: "Shorts", precio: 60.00, stock: 24, proveedor: "Confecciones Lima" },
+            { codigo: "RE-033", nombre: "Camisa Denim Ligera", categoria: "Camisas", precio: 79.00, stock: 15, proveedor: "Moda & Estilo Peruano" },
+            { codigo: "RE-034", nombre: "Chompa Cuello Tortuga", categoria: "Chompas", precio: 85.00, stock: 25, proveedor: "Alpacas y Algodón" },
+            { codigo: "RE-035", nombre: "Blazer Lino Veraniego", categoria: "Blazers", precio: 130.00, stock: 11, proveedor: "Gamarra Import S.A.C." },
+            { codigo: "RE-036", nombre: "Top Deportivo Alto Impacto", categoria: "Polos", precio: 39.90, stock: 4, proveedor: "Textil San Jacinto" }, // Stock bajo inicial de prueba
+            { codigo: "RE-037", nombre: "Jogger de Algodón", categoria: "Pantalones", precio: 69.00, stock: 35, proveedor: "Moda & Estilo Peruano" },
+            { codigo: "RE-038", nombre: "Vestido Largo Estampado", categoria: "Vestidos", precio: 110.00, stock: 14, proveedor: "Confecciones Lima" },
+            { codigo: "RE-039", nombre: "Casaca Cuero Sintético (Biker)", categoria: "Casacas", precio: 150.00, stock: 10, proveedor: "Gamarra Import S.A.C." },
+            { codigo: "RE-040", nombre: "Blusa Manga Cero Satín", categoria: "Blusas", precio: 42.00, stock: 30, proveedor: "Confecciones Lima" },
+            { codigo: "RE-041", nombre: "Short Playero Algodón", categoria: "Shorts", precio: 35.00, stock: 40, proveedor: "Textil San Jacinto" },
+            { codigo: "RE-042", nombre: "Enterizo Corto Casual", categoria: "Enterizos", precio: 75.00, stock: 18, proveedor: "Moda & Estilo Peruano" },
+            { codigo: "RE-043", nombre: "Maxi Falda de Lino", categoria: "Faldas", precio: 69.90, stock: 22, proveedor: "Confecciones Lima" },
+            { codigo: "RE-044", nombre: "Polo Manga Larga Listado", categoria: "Polos", precio: 38.00, stock: 45, proveedor: "Textil San Jacinto" },
+            { codigo: "RE-045", nombre: "Pijama de Invierno Polar", categoria: "Pijamas", precio: 85.00, stock: 20, proveedor: "Gamarra Import S.A.C." },
+            { codigo: "RE-046", nombre: "Cárdigan Corto con Botones", categoria: "Chompas", precio: 55.00, stock: 17, proveedor: "Alpacas y Algodón" },
+            { codigo: "RE-047", nombre: "Pantalón Cargo Drill", categoria: "Pantalones", precio: 95.00, stock: 25, proveedor: "Moda & Estilo Peruano" },
+            { codigo: "RE-048", nombre: "Bikini Dos Piezas", categoria: "Ropa de Playa", precio: 79.00, stock: 30, proveedor: "Gamarra Import S.A.C." },
+            { codigo: "RE-049", nombre: "Blusa Denim Manga 3/4", categoria: "Blusas", precio: 65.00, stock: 20, proveedor: "Confecciones Lima" },
+            { codigo: "RE-050", nombre: "Vestido Camisero de Lino", categoria: "Vestidos", precio: 99.00, stock: 15, proveedor: "Moda & Estilo Peruano" }
+        ];
+
+        let productos = [];
+        let carrito = [];
+
+        // --- 2. INICIALIZACIÓN Y CONTROL DE SESIÓN ---
+        document.addEventListener("DOMContentLoaded", () => {
+            if (!localStorage.getItem("db_productos")) {
+                localStorage.setItem("db_productos", JSON.stringify(listaInicialProductos));
+            }
+            cargarDatosDesdeStorage();
+            renderizarInventario(productos);
+            actualizarSelectProductosVenta();
+        });
+
+        function cargarDatosDesdeStorage() {
+            productos = JSON.parse(localStorage.getItem("db_productos"));
+        }
+
+        function guardarDatosEnStorage() {
+            localStorage.setItem("db_productos", JSON.stringify(productos));
+        }
+
+        // --- 3. CAMBIO DE SECCIONES (Navegación SPA) ---
+        function cambiarSeccion(seccion) {
+            document.getElementById("sec-inventario").classList.toggle("hidden", seccion !== "inventario");
+            document.getElementById("sec-ventas").classList.toggle("hidden", seccion !== "ventas");
+            if (seccion === "ventas") actualizarSelectProductosVenta();
+        }
+
+        // --- 4. RENDERIZACIÓN Y FILTROS DEL INVENTARIO ---
+        function renderizarInventario(lista) {
+            const tbody = document.getElementById("tabla-productos");
+            tbody.innerHTML = "";
+
+            lista.forEach((p, index) => {
+                const stockAlertaClass = p.stock <= 5 ? "bg-red-100 text-red-800 font-bold" : "bg-green-100 text-green-800";
+                
+                tbody.innerHTML += `
+                    <tr class="hover:bg-gray-50 transition">
+                        <td class="px-6 py-4 whitespace-nowrap font-mono text-xs font-bold text-gray-600">${p.codigo}</td>
+                        <td class="px-6 py-4 whitespace-nowrap font-medium text-gray-900">${p.nombre}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-gray-500">${p.categoria}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right font-semibold">S/. ${p.precio.toFixed(2)}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-center">
+                            <span class="px-2.5 py-1 inline-flex text-xs leading-5 rounded-full ${stockAlertaClass}">
+                                ${p.stock} pzas ${p.stock <= 5 ? '<i class="fa-solid fa-triangle-exclamation ml-1 mt-0.5"></i>' : ''}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-gray-500">${p.proveedor}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-center space-x-2">
+                            <button onclick="abrirModalProducto('${p.codigo}')" class="text-blue-600 hover:text-blue-900 transition"><i class="fa-solid fa-pen-to-square"></i></button>
+                            <button onclick="eliminarProducto('${p.codigo}')" class="text-red-600 hover:text-red-900 transition"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function filtrarProductos() {
+            const query = document.getElementById("buscar-nombre").value.toLowerCase();
+            const cat = document.getElementById("buscar-categoria").value;
+
+            const filtrados = productos.filter(p => {
+                const coincideTexto = p.nombre.toLowerCase().includes(query) || p.codigo.toLowerCase().includes(query);
+                const coincideCat = cat === "" || p.categoria === cat;
+                return coincideTexto && coincideCat;
+            });
+
+            renderizarInventario(filtrados);
+        }
+
+        // --- 5. GESTIÓN FORMULARIOS INTERACTIVOS (CRUD con SweetAlert2) ---
+        async function abrirModalProducto(codigo = null) {
+            const p = codigo ? productos.find(prod => prod.codigo === codigo) : null;
+            
+            const { value: formValues } = await Swal.fire({
+                title: p ? `<span class="text-xl font-bold">Editar Prenda: ${p.nombre}</span>` : '<span class="text-xl font-bold">Añadir Nueva Prenda</span>',
+                html: `
+                    <div class="space-y-3 text-left p-2">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-600 mb-1">CÓDIGO (Único)</label>
+                            <input id="swal-codigo" class="w-full p-2 border border-gray-300 rounded text-sm font-mono" value="${p ? p.codigo : ''}" ${p ? 'disabled bg-gray-100' : ''} placeholder="Ej: RE-051">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-600 mb-1">NOMBRE DE LA PRENDA</label>
+                            <input id="swal-nombre" class="w-full p-2 border border-gray-300 rounded text-sm" value="${p ? p.nombre : ''}" placeholder="Ej: Vestido Casual Seda">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-600 mb-1">CATEGORÍA</label>
+                            <input id="swal-categoria" class="w-full p-2 border border-gray-300 rounded text-sm" value="${p ? p.categoria : ''}" placeholder="Ej: Vestidos">
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block text-xs font-bold text-gray-600 mb-1">PRECIO (S/.)</label>
+                                <input id="swal-precio" type="number" step="0.01" class="w-full p-2 border border-gray-300 rounded text-sm text-right" value="${p ? p.precio : ''}" placeholder="0.00">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-gray-600 mb-1">STOCK INICIAL</label>
+                                <input id="swal-stock" type="number" class="w-full p-2 border border-gray-300 rounded text-sm text-center" value="${p ? p.stock : ''}" placeholder="0">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-600 mb-1">PROVEEDOR</label>
+                            <input id="swal-proveedor" class="w-full p-2 border border-gray-300 rounded text-sm" value="${p ? p.proveedor : ''}" placeholder="Ej: Textil Gamarra">
+                        </div>
+                    </div>
+                `,
+                focusConfirm: false,
+                showCancelButton: true,
+                confirmButtonText: '<i class="fa-solid fa-floppy-disk mr-1"></i> Guardar',
+                cancelButtonText: 'Cancelar',
+                confirmButtonColor: '#4f46e5',
+                preConfirm: () => {
+                    const cod = document.getElementById('swal-codigo').value.trim().toUpperCase();
+                    const nom = document.getElementById('swal-nombre').value.trim();
+                    const cat = document.getElementById('swal-categoria').value.trim();
+                    const pre = parseFloat(document.getElementById('swal-precio').value);
+                    const stk = parseInt(document.getElementById('swal-stock').value);
+                    const pro = document.getElementById('swal-proveedor').value.trim();
+
+                    if (!cod || !nom || !cat || isNaN(pre) || isNaN(stk) || !pro) {
+                        Swal.showValidationMessage('Por favor complete todos los campos obligatorios.');
+                        return false;
+                    }
+                    if (!p && productos.some(prod => prod.codigo === cod)) {
+                        Swal.showValidationMessage('El código de producto ya existe.');
+                        return false;
+                    }
+                    return { codigo: cod, nombre: nom, categoria: cat, precio: pre, stock: stk, proveedor: pro };
+                }
+            });
+
+            if (formValues) {
+                if (p) {
+                    // Actualización (Editar)
+                    const idx = productos.findIndex(prod => prod.codigo === codigo);
+                    productos[idx] = formValues;
+                    Swal.fire('¡Actualizado!', 'Los datos del producto han sido modificados de forma segura.', 'success');
+                } else {
+                    // Creación (Nuevo)
+                    productos.push(formValues);
+                    Swal.fire('¡Registrado!', 'La nueva prenda se ha añadido al inventario.', 'success');
+                }
+                guardarDatosEnStorage();
+                renderizarInventario(productos);
+            }
+        }
+
+        function eliminarProducto(codigo) {
+            Swal.fire({
+                title: '¿Estás seguro?',
+                text: `Se eliminará de forma permanente el producto con código ${codigo}.`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Sí, eliminar',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    productos = productos.filter(p => p.codigo !== codigo);
+                    guardarDatosEnStorage();
+                    renderizarInventario(productos);
+                    Swal.fire('Eliminado', 'El registro ha sido removido.', 'success');
+                }
+            });
+        }
+
+        // --- 6. MÓDULO DE VENTAS Y CONTROL DE STOCK ---
+        function actualizarSelectProductosVenta() {
+            const select = document.getElementById("venta-producto-select");
+            select.innerHTML = "";
+            productos.forEach(p => {
+                const deshabilitado = p.stock === 0 ? "disabled" : "";
+                const textoStock = p.stock === 0 ? "(AGOTADO)" : `(Stock: ${p.stock})`;
+                select.innerHTML += `<option value="${p.codigo}" ${deshabilitado}>${p.codigo} - ${p.nombre} - S/. ${p.precio.toFixed(2)} ${textoStock}</option>`;
+            });
+        }
+
+        function agregarAlCarrito() {
+            const codigo = document.getElementById("venta-producto-select").value;
+            if (!codigo) return;
+
+            const productoOriginal = productos.find(p => p.codigo === codigo);
+            const itemEnCarrito = carrito.find(item => item.codigo === codigo);
+
+            if (itemEnCarrito) {
+                if (itemEnCarrito.cantidad < productoOriginal.stock) {
+                    itemEnCarrito.cantidad++;
+                } else {
+                    Swal.fire('Límite de Stock', 'No puedes añadir más unidades de las disponibles en inventario.', 'warning');
+                    return;
+                }
+            } else {
+                carrito.push({
+                    codigo: productoOriginal.codigo,
+                    nombre: productoOriginal.nombre,
+                    precio: productoOriginal.precio,
+                    cantidad: 1
+                });
+            }
+            renderizarCarrito();
+        }
+
+        function cambiarCantidadCarrito(codigo, cambio) {
+            const item = carrito.find(i => i.codigo === codigo);
+            const productoOriginal = productos.find(p => p.codigo === codigo);
+            const nuevaCant = item.cantidad + cambio;
+
+            if (nuevaCant <= 0) {
+                quitarDelCarrito(codigo);
+            } else if (nuevaCant > productoOriginal.stock) {
+                Swal.fire('Límite de Stock', 'No quedan más unidades disponibles.', 'warning');
+            } else {
+                item.cantidad = nuevaCant;
+                renderizarCarrito();
+            }
+        }
+
+        function quitarDelCarrito(codigo) {
+            carrito = carrito.filter(i => i.codigo !== codigo);
+            renderizarCarrito();
+        }
+
+        function renderizarCarrito() {
+            const tbody = document.getElementById("tabla-carrito");
+            tbody.innerHTML = "";
+
+            carrito.forEach(item => {
+                const subtotal = item.precio * item.cantidad;
+                tbody.innerHTML += `
+                    <tr class="hover:bg-gray-50 transition">
+                        <td class="px-4 py-3 font-medium text-gray-900">${item.nombre}</td>
+                        <td class="px-4 py-3 text-right">S/. ${item.precio.toFixed(2)}</td>
+                        <td class="px-4 py-3 text-center">
+                            <div class="flex items-center justify-center space-x-2">
+                                <button onclick="cambiarCantidadCarrito('${item.codigo}', -1)" class="text-xs bg-gray-200 hover:bg-gray-300 px-1.5 py-0.5 rounded font-bold">-</button>
+                                <span class="font-bold font-mono">${item.cantidad}</span>
+                                <button onclick="cambiarCantidadCarrito('${item.codigo}', 1)" class="text-xs bg-gray-200 hover:bg-gray-300 px-1.5 py-0.5 rounded font-bold">+</button>
+                            </div>
+                        </td>
+                        <td class="px-4 py-3 text-right font-semibold font-mono">S/. ${subtotal.toFixed(2)}</td>
+                        <td class="px-4 py-3 text-center">
+                            <button onclick="quitarDelCarrito('${item.codigo}')" class="text-red-500 hover:text-red-700"><i class="fa-solid fa-xmark"></i></button>
+                        </td>
+                    </tr>
+                `;
+            });
+            calcularTotalesVenta();
+        }
+
+        let calculosVentaGlobales = {};
+
+        function calcularTotalesVenta() {
+            const bruto = carrito.reduce((acc, item) => acc + (item.precio * item.cantidad), 0);
+            const descuento = parseFloat(document.getElementById("venta-descuento").value) || 0;
+            
+            const baseConDescuento = Math.max(0, bruto - descuento);
+            const subtotal = baseConDescuento / 1.18;
+            const igv = baseConDescuento - subtotal;
+            const total = baseConDescuento;
+
+            calculosVentaGlobales = { bruto, descuento, subtotal, igv, total };
+
+            document.getElementById("resumen-subtotal").innerText = `S/. ${subtotal.toFixed(2)}`;
+            document.getElementById("resumen-igv").innerText = `S/. ${igv.toFixed(2)}`;
+            document.getElementById("resumen-total").innerText = `S/. ${total.toFixed(2)}`;
+        }
+
+        function procesarVenta() {
+            if (carrito.length === 0) {
+                Swal.fire('Carrito Vacío', 'Debe agregar al menos una prenda para procesar el cobro.', 'info');
+                return;
+            }
+
+            // Descontar inventario real
+            carrito.forEach(item => {
+                const p = productos.find(prod => prod.codigo === item.codigo);
+                if (p) p.stock -= item.cantidad;
+            });
+
+            guardarDatosEnStorage();
+            renderizarInventario(productos);
+
+            // Generar Comprobante Visual Estilizado (SweetAlert2)
+            let articulosHtml = carrito.map(i => `
+                <div class="flex justify-between text-xs font-mono border-b border-dashed py-1 text-gray-700">
+                    <span>${i.cantidad}x ${i.nombre.substring(0,22)}</span>
+                    <span>S/. ${(i.precio * i.cantidad).toFixed(2)}</span>
+                </div>
+            `).join('');
+
+            Swal.fire({
+                title: '<i class="fa-solid fa-circle-check text-emerald-500 text-3xl"></i><br><span class="text-lg font-bold">VENTA PROCESADA EXITOSAMENTE</span>',
+                html: `
+                    <div class="text-left bg-yellow-50 p-4 rounded-lg border border-yellow-200 max-w-sm mx-auto shadow-inner">
+                        <div class="text-center font-bold text-sm tracking-wider text-gray-800">COMPROBANTE ELECTRÓNICO</div>
+                        <div class="text-center text-[10px] font-mono text-gray-400 mb-3">FECHA: ${new Date().toLocaleString()}</div>
+                        <hr class="border-gray-300 my-2">
+                        ${articulosHtml}
+                        <div class="space-y-1 pt-3 font-mono text-xs">
+                            <div class="flex justify-between text-gray-500"><span>Subtotal:</span><span>S/. ${calculosVentaGlobales.subtotal.toFixed(2)}</span></div>
+                            <div class="flex justify-between text-gray-500"><span>IGV (18%):</span><span>S/. ${calculosVentaGlobales.igv.toFixed(2)}</span></div>
+                            <div class="flex justify-between text-red-500"><span>Descuento:</span><span>-S/. ${calculosVentaGlobales.descuento.toFixed(2)}</span></div>
+                            <hr class="border-gray-300 my-1">
+                            <div class="flex justify-between font-black text-sm text-gray-900 bg-yellow-100 p-1 rounded"><span>TOTAL PAGADO:</span><span>S/. ${calculosVentaGlobales.total.toFixed(2)}</span></div>
+                        </div>
+                    </div>
+                `,
+                confirmButtonText: 'Aceptar y Limpiar Caja',
+                confirmButtonColor: '#059669'
+            });
+
+            // Limpieza y reinicio de estados
+            carrito = [];
+            document.getElementById("venta-descuento").value = "0";
+            renderizarCarrito();
+            actualizarSelectProductosVenta();
+        }
+
+        // --- 7. EXPORTACIÓN DE DATOS (Copia de Seguridad JSON) ---
+        function exportarJSON() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(productos, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", "respaldo_inventario_modagestion.json");
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+
+            Swal.fire('Exportación Exitosa', 'El archivo JSON se ha descargado correctamente. Consérvalo como copia de seguridad.', 'success');
+        }
+    </script>
+</body>
+</html>
